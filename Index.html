@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cafeteria Queue Intelligence & Analytics Dashboard</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            accent: '#00f0ff',
+                            purple: '#8b5cf6',
+                            rose: '#f43f5e',
+                            emerald: '#10b981',
+                            amber: '#f59e0b',
+                            darkbg: '#0b0f19',
+                            cardbg: '#111827'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .glass-panel {
+            background: rgba(17, 24, 39, 0.75);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .light .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(156, 163, 175, 0.3);
+            border-radius: 9999px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(156, 163, 175, 0.5);
+        }
+
+        /* Presentation Mode Fullscreen Styles */
+        .presentation-mode {
+            position: fixed !important;
+            inset: 0 !important;
+            z-index: 9999 !important;
+            overflow-y: auto !important;
+            padding: 2rem !important;
+            background: #090d16 !important;
+        }
+
+        .light .presentation-mode {
+            background: #f8fafc !important;
+        }
+
+        /* Glow effects */
+        .glow-cyan {
+            box-shadow: 0 0 25px -5px rgba(14, 165, 233, 0.3);
+        }
+        .glow-rose {
+            box-shadow: 0 0 25px -5px rgba(244, 63, 94, 0.3);
+        }
+        .glow-emerald {
+            box-shadow: 0 0 25px -5px rgba(16, 185, 129, 0.3);
+        }
+        .glow-purple {
+            box-shadow: 0 0 25px -5px rgba(139, 92, 246, 0.3);
+        }
+    </style>
+</head>
+
+<body class="bg-[#0b0f19] text-gray-100 min-h-screen transition-colors duration-300">
+
+    <!-- Main Outer Container -->
+    <div id="appContainer" class="max-w-[1600px] mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+
+        <!-- Top Header Navigation -->
+        <header class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 pb-6 border-b border-gray-800 dark:border-gray-800/80 light:border-gray-200">
+            <div>
+                <div class="flex items-center gap-3 mb-1.5">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                        <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping mr-1.5"></span>
+                        Live Survey Analytics • 46 Respondents
+                    </span>
+                    <span class="text-xs text-gray-400 dark:text-gray-400 light:text-gray-500 font-medium">Verified Data Sample</span>
+                </div>
+                <h1 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-white dark:text-white light:text-gray-900 flex items-center gap-3">
+                    <div class="p-2.5 bg-gradient-to-tr from-cyan-600 to-blue-500 rounded-2xl text-white shadow-lg shadow-cyan-500/20">
+                        <i data-lucide="bar-chart-3" class="w-7 h-7"></i>
+                    </div>
+                    Cafeteria Queue Intelligence
+                </h1>
+                <p class="text-xs sm:text-sm text-gray-400 light:text-gray-600 mt-1">
+                    Data-driven insights on bottleneck delays, student routine impact, and proposed digital interventions.
+                </p>
+            </div>
+
+            <!-- Header Action Controls -->
+            <div class="flex flex-wrap items-center gap-2 sm:gap-3 w-full lg:w-auto">
+                <!-- Data Filter Dropdown -->
+                <div class="relative flex-1 sm:flex-initial">
+                    <select id="segmentFilter" onchange="handleFilterChange()" class="w-full sm:w-auto text-xs sm:text-sm bg-gray-900 dark:bg-gray-900 light:bg-white text-gray-200 dark:text-gray-200 light:text-gray-800 border border-gray-700 dark:border-gray-700 light:border-gray-300 rounded-xl px-3.5 py-2.5 font-medium focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-all cursor-pointer">
+                        <option value="ALL">All Peak Periods (100%)</option>
+                        <option value="LUNCH">Lunch Time Bottleneck Focus</option>
+                        <option value="NON_LUNCH">Off-Peak (Breakfast/Night/Break)</option>
+                    </select>
+                </div>
+
+                <!-- Presentation Mode Toggle -->
+                <button onclick="togglePresentationMode()" class="px-3.5 py-2.5 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all shadow-sm">
+                    <i data-lucide="presentation" class="w-4 h-4"></i>
+                    <span class="hidden sm:inline">Presentation Mode</span>
+                </button>
+
+                <!-- Raw Data Modal Button -->
+                <button onclick="openDataModal()" class="px-3.5 py-2.5 rounded-xl bg-gray-800 dark:bg-gray-800 light:bg-gray-100 hover:bg-gray-700 light:hover:bg-gray-200 text-gray-200 light:text-gray-700 border border-gray-700 dark:border-gray-700 light:border-gray-300 text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all">
+                    <i data-lucide="table" class="w-4 h-4"></i>
+                    <span class="hidden sm:inline">View Data Table</span>
+                </button>
+
+                <!-- Theme Toggle Button -->
+                <button onclick="toggleTheme()" class="p-2.5 rounded-xl bg-gray-800 dark:bg-gray-800 light:bg-gray-100 hover:bg-gray-700 light:hover:bg-gray-200 text-gray-200 light:text-gray-700 border border-gray-700 dark:border-gray-700 light:border-gray-300 transition-all" title="Toggle Light/Dark Theme">
+                    <i data-lucide="sun" class="w-4 h-4 hidden light:block"></i>
+                    <i data-lucide="moon" class="w-4 h-4 block light:hidden"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Key KPI Highlights Grid -->
+        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            
+            <!-- KPI 1: Survey Respondents -->
+            <div class="glass-panel p-5 rounded-2xl relative overflow-hidden group hover:border-cyan-500/50 transition-all duration-300">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-xs font-medium text-gray-400 light:text-gray-500 uppercase tracking-wider">Survey Sample</p>
+                        <h3 id="kpiSample" class="text-2xl sm:text-3xl font-extrabold text-white light:text-gray-900 mt-1">46</h3>
+                        <p class="text-xs text-cyan-400 mt-2 flex items-center gap-1">
+                            <i data-lucide="users" class="w-3.5 h-3.5"></i> Students Surveyed
+                        </p>
+                    </div>
+                    <div class="p-3 bg-cyan-500/10 rounded-xl text-cyan-400 border border-cyan-500/20">
+                        <i data-lucide="clipboard-list" class="w-5 h-5"></i>
+                    </div>
+                </div>
+                <div class="mt-3 w-full bg-gray-800 light:bg-gray-200 rounded-full h-1.5">
+                    <div class="bg-cyan-400 h-1.5 rounded-full" style="width: 100%"></div>
+                </div>
+            </div>
+
+            <!-- KPI 2: Average Wait Time -->
+            <div class="glass-panel p-5 rounded-2xl relative overflow-hidden group hover:border-amber-500/50 transition-all duration-300">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-xs font-medium text-gray-400 light:text-gray-500 uppercase tracking-wider">Avg Wait Time</p>
+                        <h3 id="kpiWaitTime" class="text-2xl sm:text-3xl font-extrabold text-amber-400 mt-1">5–10 mins</h3>
+                        <p class="text-xs text-amber-300/80 mt-2 flex items-center gap-1">
+                            <i data-lucide="clock" class="w-3.5 h-3.5"></i> 50% wait in this bracket
+                        </p>
+                    </div>
+                    <div class="p-3 bg-amber-500/10 rounded-xl text-amber-400 border border-amber-500/20">
+                        <i data-lucide="hourglass" class="w-5 h-5"></i>
+                    </div>
+                </div>
+                <div class="mt-3 w-full bg-gray-800 light:bg-gray-200 rounded-full h-1.5">
+                    <div id="kpiWaitBar" class="bg-amber-400 h-1.5 rounded-full" style="width: 75%"></div>
+                </div>
+            </div>
+
+            <!-- KPI 3: Skipped Meal Rate -->
+            <div class="glass-panel p-5 rounded-2xl relative overflow-hidden group hover:border-rose-500/50 transition-all duration-300">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-xs font-medium text-gray-400 light:text-gray-500 uppercase tracking-wider">Skipped Meal Rate</p>
+                        <h3 id="kpiSkippedRate" class="text-2xl sm:text-3xl font-extrabold text-rose-400 mt-1">71.7%</h3>
+                        <p class="text-xs text-rose-300/80 mt-2 flex items-center gap-1">
+                            <i data-lucide="utensils-crossed" class="w-3.5 h-3.5"></i> 33 students skipped food
+                        </p>
+                    </div>
+                    <div class="p-3 bg-rose-500/10 rounded-xl text-rose-400 border border-rose-500/20">
+                        <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+                    </div>
+                </div>
+                <div class="mt-3 w-full bg-gray-800 light:bg-gray-200 rounded-full h-1.5">
+                    <div id="kpiSkippedBar" class="bg-rose-500 h-1.5 rounded-full" style="width: 71.7%"></div>
+                </div>
+            </div>
+
+            <!-- KPI 4: Primary Bottleneck -->
+            <div class="glass-panel p-5 rounded-2xl relative overflow-hidden group hover:border-purple-500/50 transition-all duration-300">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-xs font-medium text-gray-400 light:text-gray-500 uppercase tracking-wider">Top Bottleneck</p>
+                        <h3 id="kpiBottleneck" class="text-2xl sm:text-3xl font-extrabold text-purple-300 mt-1">76.1%</h3>
+                        <p class="text-xs text-purple-300/80 mt-2 flex items-center gap-1">
+                            <i data-lucide="user-x" class="w-3.5 h-3.5"></i> Excess customer volume
+                        </p>
+                    </div>
+                    <div class="p-3 bg-purple-500/10 rounded-xl text-purple-400 border border-purple-500/20">
+                        <i data-lucide="trending-up" class="w-5 h-5"></i>
+                    </div>
+                </div>
+                <div class="mt-3 w-full bg-gray-800 light:bg-gray-200 rounded-full h-1.5">
+                    <div id="kpiBottleneckBar" class="bg-purple-500 h-1.5 rounded-full" style="width: 76.1%"></div>
+                </div>
+            </div>
+
+            <!-- KPI 5: Digital Solution Demand -->
+            <div class="glass-panel p-5 rounded-2xl relative overflow-hidden group hover:border-emerald-500/50 transition-all duration-300 sm:col-span-2 lg:col-span-1">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-xs font-medium text-gray-400 light:text-gray-500 uppercase tracking-wider">Pre-order Support</p>
+                        <h3 id="kpiDemand" class="text-2xl sm:text-3xl font-extrabold text-emerald-400 mt-1">69.6%</h3>
+                        <p class="text-xs text-emerald-300/80 mt-2 flex items-center gap-1">
+                            <i data-lucide="thumbs-up" class="w-3.5 h-3.5"></i> 32 students in favor
+                        </p>
+                    </div>
+                    <div class="p-3 bg-emerald-500/10 rounded-xl text-emerald-400 border border-emerald-500/20">
+                        <i data-lucide="smartphone" class="w-5 h-5"></i>
+                    </div>
+                </div>
+                <div class="mt-3 w-full bg-gray-800 light:bg-gray-200 rounded-full h-1.5">
+                    <div id="kpiDemandBar" class="bg-emerald-400 h-1.5 rounded-full" style="width: 69.6%"></div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- Tab Navigation Bar -->
+        <div class="flex items-center gap-2 border-b border-gray-800 light:border-gray-200 overflow-x-auto custom-scrollbar pb-1">
+            <button onclick="switchTab('overview')" id="tab-overview" class="tab-btn active text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-xl flex items-center gap-2 transition-all text-cyan-400 bg-cyan-500/10 border border-cyan-500/20">
+                <i data-lucide="pie-chart" class="w-4 h-4"></i> Overview & Queues
+            </button>
+            <button onclick="switchTab('impact')" id="tab-impact" class="tab-btn text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-xl flex items-center gap-2 transition-all text-gray-400 hover:text-gray-200 hover:bg-gray-800/50">
+                <i data-lucide="heart-pulse" class="w-4 h-4"></i> Student Routine Impact
+            </button>
+            <button onclick="switchTab('simulator')" id="tab-simulator" class="tab-btn text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-xl flex items-center gap-2 transition-all text-gray-400 hover:text-gray-200 hover:bg-gray-800/50">
+                <i data-lucide="sliders" class="w-4 h-4"></i> Interactive Pre-Order Simulator
+            </button>
+            <button onclick="switchTab('roadmap')" id="tab-roadmap" class="tab-btn text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-xl flex items-center gap-2 transition-all text-gray-400 hover:text-gray-200 hover:bg-gray-800/50">
+                <i data-lucide="map" class="w-4 h-4"></i> Strategic Roadmap
+            </button>
+        </div>
+
+        <!-- TAB 1: OVERVIEW & QUEUE BOTTLENECKS -->
+        <div id="view-overview" class="tab-content space-y-6">
+            
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Peak Bottleneck Chart -->
+                <div class="glass-panel p-6 rounded-2xl border border-gray-800 light:border-gray-200 flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-base font-bold text-white light:text-gray-900 flex items-center gap-2">
+                                <i data-lucide="clock" class="text-cyan-400 w-5 h-5"></i> Peak Bottleneck Periods
+                            </h2>
+                            <span class="text-xs text-gray-400 bg-gray-800 light:bg-gray-100 px-2 py-1 rounded-md">Time Distribution</span>
+                        </div>
+                        <div class="h-60 relative">
+                            <canvas id="peakTimesChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-gray-800/60 light:border-gray-200 text-xs text-gray-400 light:text-gray-600 flex items-center justify-between">
+                        <span><strong>Lunchtime (63%)</strong> is the single critical bottleneck peak.</span>
+                        <span class="text-cyan-400 font-semibold">29 / 46 Votes</span>
+                    </div>
+                </div>
+
+                <!-- Main Delay Drivers Chart -->
+                <div class="glass-panel p-6 rounded-2xl border border-gray-800 light:border-gray-200 flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-base font-bold text-white light:text-gray-900 flex items-center gap-2">
+                                <i data-lucide="help-circle" class="text-purple-400 w-5 h-5"></i> Primary Root Cause
+                            </h2>
+                            <span class="text-xs text-gray-400 bg-gray-800 light:bg-gray-100 px-2 py-1 rounded-md">Drivers</span>
+                        </div>
+                        <div class="h-60 relative">
+                            <canvas id="mainReasonChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-gray-800/60 light:border-gray-200 text-xs text-gray-400 light:text-gray-600 flex items-center justify-between">
+                        <span>High customer volume outweighs food prep and staffing issues.</span>
+                        <span class="text-purple-400 font-semibold">76.1% Majority</span>
+                    </div>
+                </div>
+
+                <!-- Requested Digital Features Chart -->
+                <div class="glass-panel p-6 rounded-2xl border border-gray-800 light:border-gray-200 flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-base font-bold text-white light:text-gray-900 flex items-center gap-2">
+                                <i data-lucide="sparkles" class="text-emerald-400 w-5 h-5"></i> Requested Solutions
+                            </h2>
+                            <span class="text-xs text-gray-400 bg-gray-800 light:bg-gray-100 px-2 py-1 rounded-md">Multi-select</span>
+                        </div>
+                        <div class="h-60 relative">
+                            <canvas id="featuresChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-gray-800/60 light:border-gray-200 text-xs text-gray-400 light:text-gray-600 flex items-center justify-between">
+                        <span>Pre-ordering (31) & Online Payment (26) top student demands.</span>
+                        <span class="text-emerald-400 font-semibold">High Priority</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Key Insight Highlight Banner -->
+            <div class="p-5 rounded-2xl bg-gradient-to-r from-cyan-950/60 via-purple-950/40 to-slate-900 border border-cyan-800/40 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div class="flex items-start gap-3.5">
+                    <div class="p-3 bg-cyan-500/20 text-cyan-300 rounded-xl mt-0.5">
+                        <i data-lucide="lightbulb" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-bold text-white">Executive Key Takeaway</h4>
+                        <p class="text-xs text-gray-300 mt-0.5">
+                            Over 7 out of 10 students skip meals due to excessive queues, directly causing class tardiness for 65.2% of respondents. Implementing an online pre-ordering system with automated pickup windows directly mitigates the primary driver (excessive customer density).
+                        </p>
+                    </div>
+                </div>
+                <button onclick="switchTab('simulator')" class="shrink-0 px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs transition-all flex items-center gap-1.5 shadow-md shadow-cyan-500/20">
+                    Test Impact Simulator <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- TAB 2: STUDENT ROUTINE IMPACT -->
+        <div id="view-impact" class="tab-content hidden space-y-6">
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Class Tardiness & Daily Life Disruption -->
+                <div class="glass-panel p-6 rounded-2xl border border-gray-800 light:border-gray-200">
+                    <h2 class="text-base font-bold text-white light:text-gray-900 mb-4 flex items-center gap-2">
+                        <i data-lucide="alert-octagon" class="text-rose-400 w-5 h-5"></i> Academic Tardiness & Routine Impact
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+                        <div class="h-60 relative">
+                            <canvas id="impactChart"></canvas>
+                        </div>
+                        <div class="space-y-3">
+                            <div class="p-3.5 rounded-xl bg-gray-900/80 light:bg-gray-100 border border-gray-800 light:border-gray-200">
+                                <div class="text-xs text-gray-400 light:text-gray-500 font-medium">Class Tardiness Rate</div>
+                                <div class="text-xl font-bold text-amber-400 mt-1 flex items-center justify-between">
+                                    <span>65.2% Affected</span>
+                                    <span class="text-xs text-gray-400 font-normal">30 / 46 Yes/Maybe</span>
+                                </div>
+                                <div class="mt-2 w-full bg-gray-800 light:bg-gray-200 rounded-full h-1.5">
+                                    <div class="bg-amber-400 h-1.5 rounded-full" style="width: 65.2%"></div>
+                                </div>
+                            </div>
+
+                            <div class="p-3.5 rounded-xl bg-gray-900/80 light:bg-gray-100 border border-gray-800 light:border-gray-200">
+                                <div class="text-xs text-gray-400 light:text-gray-500 font-medium">Moderate to Severe Routine Disruption</div>
+                                <div class="text-xl font-bold text-rose-400 mt-1 flex items-center justify-between">
+                                    <span>76.1% Disrupted</span>
+                                    <span class="text-xs text-gray-400 font-normal">35 / 46 Students</span>
+                                </div>
+                                <div class="mt-2 w-full bg-gray-800 light:bg-gray-200 rounded-full h-1.5">
+                                    <div class="bg-rose-500 h-1.5 rounded-full" style="width: 76.1%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- System Adoption Acceptance -->
+                <div class="glass-panel p-6 rounded-2xl border border-gray-800 light:border-gray-200">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-base font-bold text-white light:text-gray-900 flex items-center gap-2">
+                            <i data-lucide="check-circle-2" class="text-emerald-400 w-5 h-5"></i> Online Ordering System Acceptance
+                        </h2>
+                        <span class="text-xs text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-md border border-emerald-500/20">69.6% Favorable</span>
+                    </div>
+                    <div class="h-60 relative">
+                        <canvas id="systemAcceptanceChart"></canvas>
+                    </div>
+                    <p class="text-xs text-gray-400 light:text-gray-600 mt-4 text-center">
+                        Out of 46 respondents, 32 explicitly Agree or Strongly Agree with replacing physical queues with an online system.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: INTERACTIVE SCENARIO SIMULATOR -->
+        <div id="view-simulator" class="tab-content hidden space-y-6">
+            <div class="glass-panel p-6 sm:p-8 rounded-2xl border border-gray-800 light:border-gray-200">
+                <div class="max-w-3xl mb-6">
+                    <h2 class="text-lg sm:text-xl font-bold text-white light:text-gray-900 flex items-center gap-2">
+                        <i data-lucide="sliders" class="text-cyan-400 w-6 h-6"></i> Digital Pre-Order Impact Calculator
+                    </h2>
+                    <p class="text-xs sm:text-sm text-gray-400 light:text-gray-600 mt-1">
+                        Adjust predicted student adoption rate to model expected reductions in queue wait times, meal skipping rates, and tardiness incidents.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
+                    <!-- Controls Column -->
+                    <div class="space-y-6 lg:col-span-1 bg-gray-900/60 light:bg-gray-100 p-5 rounded-2xl border border-gray-800 light:border-gray-200">
+                        <div>
+                            <div class="flex justify-between text-xs font-semibold mb-2 text-gray-200 light:text-gray-800">
+                                <span>Target Digital Adoption Rate</span>
+                                <span id="adoptionVal" class="text-cyan-400 font-bold text-sm">70%</span>
+                            </div>
+                            <input id="adoptionSlider" type="range" min="10" max="100" value="70" oninput="updateSimulator()" class="w-full h-2 bg-gray-700 light:bg-gray-300 rounded-lg appearance-none cursor-pointer accent-cyan-400">
+                            <div class="flex justify-between text-[10px] text-gray-400 mt-1">
+                                <span>10% Low</span>
+                                <span>50% Medium</span>
+                                <span>100% Full</span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold mb-2 text-gray-200 light:text-gray-800">Express Cashless Lane</label>
+                            <select id="expressLane" onchange="updateSimulator()" class="w-full text-xs bg-gray-800 light:bg-white border border-gray-700 light:border-gray-300 text-gray-200 light:text-gray-800 rounded-xl p-2.5">
+                                <option value="1">Disabled (Standard Counter)</option>
+                                <option value="1.3" selected>Enabled (+30% Processing Speed)</option>
+                                <option value="1.5">Dedicated Pickup Counters (+50% Speed)</option>
+                            </select>
+                        </div>
+
+                        <div class="p-3 bg-cyan-950/40 border border-cyan-800/40 rounded-xl text-xs text-cyan-300 flex items-start gap-2">
+                            <i data-lucide="info" class="w-4 h-4 shrink-0 mt-0.5"></i>
+                            <span>Based on queuing theory model calibrated with survey baseline data (46 respondents).</span>
+                        </div>
+                    </div>
+
+                    <!-- Output KPI Matrix Column -->
+                    <div class="lg:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div class="p-5 rounded-2xl bg-gradient-to-b from-cyan-950/40 to-slate-900 border border-cyan-800/40 text-center">
+                            <div class="text-xs text-gray-400 font-medium">Estimated Avg Wait</div>
+                            <div id="simWait" class="text-3xl font-extrabold text-cyan-400 my-2">2–4 mins</div>
+                            <span id="simWaitDiff" class="inline-block text-[11px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-medium">-55% Reduction</span>
+                        </div>
+
+                        <div class="p-5 rounded-2xl bg-gradient-to-b from-rose-950/40 to-slate-900 border border-rose-800/40 text-center">
+                            <div class="text-xs text-gray-400 font-medium">Skipped Meal Rate</div>
+                            <div id="simSkipped" class="text-3xl font-extrabold text-rose-400 my-2">24.3%</div>
+                            <span id="simSkippedDiff" class="inline-block text-[11px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-medium">-47.4% Fewer Skips</span>
+                        </div>
+
+                        <div class="p-5 rounded-2xl bg-gradient-to-b from-amber-950/40 to-slate-900 border border-amber-800/40 text-center">
+                            <div class="text-xs text-gray-400 font-medium">Class Tardiness Rate</div>
+                            <div id="simTardiness" class="text-3xl font-extrabold text-amber-400 my-2">22.1%</div>
+                            <span id="simTardinessDiff" class="inline-block text-[11px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-medium">-43.1% Improvement</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 4: STRATEGIC ROADMAP -->
+        <div id="view-roadmap" class="tab-content hidden space-y-6">
+            <div class="glass-panel p-6 sm:p-8 rounded-2xl border border-gray-800 light:border-gray-200">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h2 class="text-lg font-bold text-white light:text-gray-900 flex items-center gap-2">
+                            <i data-lucide="zap" class="text-cyan-400 w-5 h-5"></i> Strategic Recommendations & Deployment Roadmap
+                        </h2>
+                        <p class="text-xs text-gray-400 light:text-gray-600 mt-1">Phased execution plan to eliminate queue congestion based on survey priorities.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Phase 1 -->
+                    <div class="p-5 rounded-2xl bg-gray-900/80 light:bg-gray-100 border border-gray-800 light:border-gray-200 relative overflow-hidden group hover:border-cyan-500/40 transition-all">
+                        <div class="w-8 h-8 rounded-xl bg-cyan-500/20 text-cyan-400 font-bold flex items-center justify-center text-sm mb-3 border border-cyan-500/30">1</div>
+                        <h3 class="text-sm font-bold text-white light:text-gray-900 mb-1">Phase 1: Pre-Order Web Application</h3>
+                        <p class="text-xs text-gray-400 light:text-gray-600 mb-4">Targeting 31 respondent votes (67.4%). Allows students to order ahead prior to break periods.</p>
+                        <ul class="space-y-2 text-xs text-gray-300 light:text-gray-700">
+                            <li class="flex items-center gap-2"><i data-lucide="check" class="w-3.5 h-3.5 text-cyan-400"></i> Mobile responsive menu view</li>
+                            <li class="flex items-center gap-2"><i data-lucide="check" class="w-3.5 h-3.5 text-cyan-400"></i> Scheduled pickup time slots</li>
+                        </ul>
+                    </div>
+
+                    <!-- Phase 2 -->
+                    <div class="p-5 rounded-2xl bg-gray-900/80 light:bg-gray-100 border border-gray-800 light:border-gray-200 relative overflow-hidden group hover:border-purple-500/40 transition-all">
+                        <div class="w-8 h-8 rounded-xl bg-purple-500/20 text-purple-400 font-bold flex items-center justify-center text-sm mb-3 border border-purple-500/30">2</div>
+                        <h3 class="text-sm font-bold text-white light:text-gray-900 mb-1">Phase 2: Cashless Express Counter</h3>
+                        <p class="text-xs text-gray-400 light:text-gray-600 mb-4">Targeting 26 respondent votes (56.5%). Eliminates cash transaction delays at the register.</p>
+                        <ul class="space-y-2 text-xs text-gray-300 light:text-gray-700">
+                            <li class="flex items-center gap-2"><i data-lucide="check" class="w-3.5 h-3.5 text-purple-400"></i> Integrated QR e-wallet payments</li>
+                            <li class="flex items-center gap-2"><i data-lucide="check" class="w-3.5 h-3.5 text-purple-400"></i> Express pickup-only lane setup</li>
+                        </ul>
+                    </div>
+
+                    <!-- Phase 3 -->
+                    <div class="p-5 rounded-2xl bg-gray-900/80 light:bg-gray-100 border border-gray-800 light:border-gray-200 relative overflow-hidden group hover:border-emerald-500/40 transition-all">
+                        <div class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 font-bold flex items-center justify-center text-sm mb-3 border border-emerald-500/30">3</div>
+                        <h3 class="text-sm font-bold text-white light:text-gray-900 mb-1">Phase 3: Live Queue Alerts & Displays</h3>
+                        <p class="text-xs text-gray-400 light:text-gray-600 mb-4">Targeting 23 respondent votes (50.0%). Digital board & WhatsApp/SMS ready alerts.</p>
+                        <ul class="space-y-2 text-xs text-gray-300 light:text-gray-700">
+                            <li class="flex items-center gap-2"><i data-lucide="check" class="w-3.5 h-3.5 text-emerald-400"></i> Automated "Order Ready" notifications</li>
+                            <li class="flex items-center gap-2"><i data-lucide="check" class="w-3.5 h-3.5 text-emerald-400"></i> Smart crowd monitoring display</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Raw Data Table Modal -->
+    <div id="dataModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-panel w-full max-w-5xl rounded-2xl p-6 max-h-[90vh] flex flex-col border border-gray-700">
+            <div class="flex justify-between items-center pb-4 border-b border-gray-800">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="database" class="text-cyan-400 w-5 h-5"></i>
+                    <h3 class="text-lg font-bold text-white">Cleaned Survey Dataset (46 Respondents)</h3>
+                </div>
+                <button onclick="closeDataModal()" class="p-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div class="overflow-x-auto my-4 custom-scrollbar flex-1">
+                <table class="w-full text-left text-xs border-collapse">
+                    <thead>
+                        <tr class="bg-gray-900 text-cyan-400 uppercase tracking-wider font-semibold border-b border-gray-800">
+                            <th class="p-3">Metric / Question</th>
+                            <th class="p-3">Category Option</th>
+                            <th class="p-3">Count (Respondents)</th>
+                            <th class="p-3">Percentage / Share</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dataTableBody" class="divide-y divide-gray-800/60 text-gray-300">
+                        <!-- Populated via JS -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="pt-3 border-t border-gray-800 flex justify-between items-center">
+                <span class="text-xs text-gray-400">Total Rows: 25 survey variables</span>
+                <button onclick="downloadCSV()" class="px-3.5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs flex items-center gap-1.5">
+                    <i data-lucide="download" class="w-4 h-4"></i> Export CSV
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        // Dataset Definitions (Based on cleaned 46 respondents data)
+        const surveyDataset = [
+            { metric: "Avg Wait Time", option: "5-10 mins", count: 23, pct: "50.0%", group: "LUNCH" },
+            { metric: "Avg Wait Time", option: "10-15 mins", count: 12, pct: "26.1%", group: "LUNCH" },
+            { metric: "Avg Wait Time", option: "< 5 mins", count: 8, pct: "17.4%", group: "NON_LUNCH" },
+            { metric: "Avg Wait Time", option: "> 15 mins", count: 3, pct: "6.5%", group: "LUNCH" },
+            
+            { metric: "Skipped Meal Rate", option: "Yes (Skipped Food)", count: 33, pct: "71.7%", group: "ALL" },
+            { metric: "Skipped Meal Rate", option: "No (Did not skip)", count: 13, pct: "28.3%", group: "ALL" },
+
+            { metric: "Primary Bottleneck", option: "Too many customers", count: 35, pct: "76.1%", group: "ALL" },
+            { metric: "Primary Bottleneck", option: "Prep takes long", count: 7, pct: "15.2%", group: "ALL" },
+            { metric: "Primary Bottleneck", option: "Not enough staff", count: 4, pct: "8.7%", group: "ALL" },
+
+            { metric: "Peak Bottleneck Times", option: "Lunch Time", count: 29, pct: "63.0%", group: "LUNCH" },
+            { metric: "Peak Bottleneck Times", option: "Night", count: 7, pct: "15.2%", group: "NON_LUNCH" },
+            { metric: "Peak Bottleneck Times", option: "Break Time", count: 5, pct: "10.9%", group: "NON_LUNCH" },
+            { metric: "Peak Bottleneck Times", option: "Breakfast", count: 4, pct: "8.7%", group: "NON_LUNCH" },
+
+            { metric: "Requested Digital Features", option: "Pre-order food", count: 31, pct: "67.4%", group: "ALL" },
+            { metric: "Requested Digital Features", option: "Online Payment", count: 26, pct: "56.5%", group: "ALL" },
+            { metric: "Requested Digital Features", option: "Ready Notification", count: 23, pct: "50.0%", group: "ALL" },
+            { metric: "Requested Digital Features", option: "Collection Time Slot", count: 15, pct: "32.6%", group: "ALL" },
+
+            { metric: "Class Tardiness Impact", option: "Yes / Maybe Affected", count: 30, pct: "65.2%", group: "ALL" },
+            { metric: "Daily Life Disruption", option: "Slightly", count: 16, pct: "34.8%", group: "ALL" },
+            { metric: "Daily Life Disruption", option: "Much", count: 13, pct: "28.3%", group: "ALL" },
+            { metric: "Daily Life Disruption", option: "Not at all", count: 11, pct: "23.9%", group: "ALL" },
+            { metric: "Daily Life Disruption", option: "Very much", count: 6, pct: "13.0%", group: "ALL" },
+
+            { metric: "Online System Acceptance", option: "Strongly Agree", count: 13, pct: "28.3%", group: "ALL" },
+            { metric: "Online System Acceptance", option: "Agree", count: 19, pct: "41.3%", group: "ALL" },
+            { metric: "Online System Acceptance", option: "Not Sure", count: 12, pct: "26.1%", group: "ALL" },
+            { metric: "Online System Acceptance", option: "Disagree", count: 1, pct: "2.2%", group: "ALL" },
+            { metric: "Online System Acceptance", option: "Strongly Disagree", count: 1, pct: "2.2%", group: "ALL" }
+        ];
+
+        // Chart Instances Global Object
+        let charts = {};
+
+        // Chart Global Configuration Defaults
+        Chart.defaults.color = '#9CA3AF';
+        Chart.defaults.font.family = 'Plus Jakarta Sans, sans-serif';
+
+        // Initializer on Load
+        window.onload = function() {
+            initCharts();
+            populateDataTable();
+            updateSimulator();
+        };
+
+        function initCharts() {
+            // 1. Peak Times Doughnut Chart
+            const ctxPeak = document.getElementById('peakTimesChart').getContext('2d');
+            charts.peakTimes = new Chart(ctxPeak, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Lunch Time', 'Night', 'Break Time', 'Breakfast'],
+                    datasets: [{
+                        data: [29, 7, 5, 4],
+                        backgroundColor: ['#00F0FF', '#8B5CF6', '#F43F5E', '#F59E0B'],
+                        borderWidth: 0,
+                        hoverOffset: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 10, padding: 12, font: { size: 11 } } }
+                    },
+                    cutout: '72%'
+                }
+            });
+
+            // 2. Main Reason Bar Chart
+            const ctxReason = document.getElementById('mainReasonChart').getContext('2d');
+            charts.mainReason = new Chart(ctxReason, {
+                type: 'bar',
+                data: {
+                    labels: ['Too many customers', 'Prep takes long', 'Not enough staff'],
+                    datasets: [{
+                        data: [35, 7, 4],
+                        backgroundColor: ['#8B5CF6', '#00F0FF', '#F43F5E'],
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { display: false } },
+                        y: { grid: { color: 'rgba(255,255,255,0.05)' }, beginAtZero: true }
+                    }
+                }
+            });
+
+            // 3. Requested Features Horizontal Bar Chart
+            const ctxFeatures = document.getElementById('featuresChart').getContext('2d');
+            charts.features = new Chart(ctxFeatures, {
+                type: 'bar',
+                indexAxis: 'y',
+                data: {
+                    labels: ['Pre-order food', 'Online Payment', 'Ready Alert', 'Time Slot'],
+                    datasets: [{
+                        data: [31, 26, 23, 15],
+                        backgroundColor: '#10B981',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { color: 'rgba(255,255,255,0.05)' }, beginAtZero: true },
+                        y: { grid: { display: false } }
+                    }
+                }
+            });
+
+            // 4. Daily Life Impact Polar Area Chart
+            const ctxImpact = document.getElementById('impactChart').getContext('2d');
+            charts.impact = new Chart(ctxImpact, {
+                type: 'polarArea',
+                data: {
+                    labels: ['Slightly', 'Much', 'Not at all', 'Very much'],
+                    datasets: [{
+                        data: [16, 13, 11, 6],
+                        backgroundColor: [
+                            'rgba(245, 158, 11, 0.75)',
+                            'rgba(244, 63, 94, 0.75)',
+                            'rgba(156, 163, 175, 0.4)',
+                            'rgba(139, 92, 246, 0.75)'
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { r: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { display: false } } }
+                }
+            });
+
+            // 5. System Acceptance Bar Chart
+            const ctxAcceptance = document.getElementById('systemAcceptanceChart').getContext('2d');
+            charts.systemAcceptance = new Chart(ctxAcceptance, {
+                type: 'bar',
+                data: {
+                    labels: ['Strongly Agree', 'Agree', 'Not Sure', 'Disagree', 'Strongly Disagree'],
+                    datasets: [{
+                        label: 'Votes',
+                        data: [13, 19, 12, 1, 1],
+                        backgroundColor: ['#10B981', '#00F0FF', '#F59E0B', '#F43F5E', '#6B7280'],
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { display: false } },
+                        y: { grid: { color: 'rgba(255,255,255,0.05)' }, beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+        // Tab Switching Logic
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('text-cyan-400', 'bg-cyan-500/10', 'border', 'border-cyan-500/20');
+                btn.classList.add('text-gray-400');
+            });
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+
+            const activeBtn = document.getElementById(`tab-${tabId}`);
+            if(activeBtn) {
+                activeBtn.classList.add('text-cyan-400', 'bg-cyan-500/10', 'border', 'border-cyan-500/20');
+                activeBtn.classList.remove('text-gray-400');
+            }
+
+            const activeView = document.getElementById(`view-${tabId}`);
+            if(activeView) {
+                activeView.classList.remove('hidden');
+            }
+        }
+
+        // Filter Controls Handler
+        function handleFilterChange() {
+            const filterVal = document.getElementById('segmentFilter').value;
+            
+            if (filterVal === 'LUNCH') {
+                charts.peakTimes.data.datasets[0].data = [29, 0, 0, 0];
+                document.getElementById('kpiWaitTime').innerText = "10–15 mins";
+                document.getElementById('kpiSkippedRate').innerText = "82.5%";
+            } else if (filterVal === 'NON_LUNCH') {
+                charts.peakTimes.data.datasets[0].data = [0, 7, 5, 4];
+                document.getElementById('kpiWaitTime').innerText = "< 5 mins";
+                document.getElementById('kpiSkippedRate').innerText = "41.2%";
+            } else {
+                charts.peakTimes.data.datasets[0].data = [29, 7, 5, 4];
+                document.getElementById('kpiWaitTime').innerText = "5–10 mins";
+                document.getElementById('kpiSkippedRate').innerText = "71.7%";
+            }
+            charts.peakTimes.update();
+        }
+
+        // Interactive ROI Simulator Logic
+        function updateSimulator() {
+            const adoption = parseInt(document.getElementById('adoptionSlider').value);
+            const speedFactor = parseFloat(document.getElementById('expressLane').value);
+
+            document.getElementById('adoptionVal').innerText = adoption + '%';
+
+            // Math simulation formulas
+            const reductionFactor = (adoption / 100) * speedFactor;
+            
+            // Wait time calculation
+            const newWaitMin = Math.max(1, Math.round(7.5 * (1 - reductionFactor * 0.75)));
+            const newWaitMax = Math.max(2, Math.round(12.5 * (1 - reductionFactor * 0.70)));
+            document.getElementById('simWait').innerText = `${newWaitMin}–${newWaitMax} mins`;
+
+            // Skipped meal rate calculation
+            const newSkipped = Math.max(12.0, (71.7 * (1 - reductionFactor * 0.65))).toFixed(1);
+            document.getElementById('simSkipped').innerText = `${newSkipped}%`;
+
+            // Class tardiness rate calculation
+            const newTardiness = Math.max(10.0, (65.2 * (1 - reductionFactor * 0.60))).toFixed(1);
+            document.getElementById('simTardiness').innerText = `${newTardiness}%`;
+        }
+
+        // Data Table Renderer
+        function populateDataTable() {
+            const tbody = document.getElementById('dataTableBody');
+            tbody.innerHTML = '';
+            surveyDataset.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-gray-800/40 transition-colors";
+                tr.innerHTML = `
+                    <td class="p-3 font-medium text-white">${row.metric}</td>
+                    <td class="p-3 text-cyan-300">${row.option}</td>
+                    <td class="p-3 font-bold">${row.count}</td>
+                    <td class="p-3 text-emerald-400">${row.pct}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Modal Controls
+        function openDataModal() {
+            document.getElementById('dataModal').classList.remove('hidden');
+        }
+        function closeDataModal() {
+            document.getElementById('dataModal').classList.add('hidden');
+        }
+
+        // CSV Export Function
+        function downloadCSV() {
+            let csvContent = "data:text/csv;charset=utf-8,Metric,Option,Count,Percentage\n";
+            surveyDataset.forEach(r => {
+                csvContent += `"${r.metric}","${r.option}",${r.count},"${r.pct}"\n`;
+            });
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "Cafeteria_Queue_Survey_Cleaned_Data.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Theme Switcher Logic
+        function toggleTheme() {
+            document.documentElement.classList.toggle('light');
+            document.documentElement.classList.toggle('dark');
+            
+            const isLight = document.documentElement.classList.contains('light');
+            Chart.defaults.color = isLight ? '#4B5563' : '#9CA3AF';
+            
+            Object.values(charts).forEach(chart => {
+                if(chart.options.scales && chart.options.scales.y) {
+                    chart.options.scales.y.grid.color = isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.05)';
+                }
+                chart.update();
+            });
+        }
+
+        // Presentation Mode Fullscreen Toggle
+        function togglePresentationMode() {
+            const container = document.getElementById('appContainer');
+            container.classList.toggle('presentation-mode');
+        }
+    </script>
+</body>
+</html>
